@@ -499,6 +499,7 @@ document.querySelectorAll("input,select").forEach(el=>{el.addEventListener("inpu
 $("addCustom").addEventListener("click",addCustomRow);
 try{var _u=localStorage.getItem("gasUrl");if(_u)$("gasUrl").value=_u;}catch(e){}
 $("gasUrl").addEventListener("input",function(){try{localStorage.setItem("gasUrl",$("gasUrl").value);}catch(e){}});
+(function(){var d=new Date();var t=("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+d.getFullYear();$("qdate").value=t;$("rdate").value=t;})();
 render();
 </script>
 </body>
