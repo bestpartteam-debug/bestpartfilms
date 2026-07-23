@@ -210,6 +210,8 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
     <select id="hours"><option value="5">5 Hours</option><option value="7">7 Hours</option><option value="10">10 Hours</option></select>
     <label>Days (จำนวนวัน)</label>
     <select id="days"><option value="1">1 Day</option><option value="2">2 Days</option><option value="3">3 Days</option></select>
+    <div class="chk"><input type="checkbox" id="perDay"><span class="cx">ระบุแต่ละวันแยก (ต่างชั่วโมง/ทีม/วันที่)</span></div>
+    <div id="dayRows" style="display:none"></div>
     <label>Time slot (ช่วงเวลา)</label><input id="tslot" placeholder="เช่น 7.00 - 12.00">
     <div class="chk" id="flexWrap" style="display:none"><input type="checkbox" id="flex"><span class="cx">Flexible Option — 1 Highlight (5–7 min) + 1 IG Reel</span><span class="px">−7,000</span></div>
   </div>
@@ -374,13 +376,44 @@ function renderPay(){
   $("oPayQ").innerHTML=h;$("oPayR").innerHTML=h;
 }
 let customItems=[];
+function dayRowHtml(i,seedTeam,seedHours){
+  const opt=(v,c,l)=>`<option value="${v}"${v==c?" selected":""}>${l}</option>`;
+  return `<div class="dayrow" data-day="${i}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0">`
+    +`<b style="min-width:46px">Day ${i}</b>`
+    +`<input class="dr-date" placeholder="01/12/2027" inputmode="numeric" style="flex:1;min-width:110px">`
+    +`<select class="dr-team">${opt("2",seedTeam,"2 Cine")}${opt("3",seedTeam,"3 Cine")}</select>`
+    +`<select class="dr-hours">${opt("5",seedHours,"5 Hrs")}${opt("7",seedHours,"7 Hrs")}${opt("10",seedHours,"10 Hrs")}</select>`
+    +`</div>`;
+}
+function buildDayRows(){
+  const wrap=$("dayRows"),on=$("perDay").checked;
+  wrap.style.display=on?"block":"none";
+  if(!on){wrap.innerHTML="";render();return;}
+  const n=Math.max(1,+$("days").value||1);
+  const prev=[...wrap.querySelectorAll(".dayrow")].map(r=>({date:r.querySelector(".dr-date").value,team:r.querySelector(".dr-team").value,hours:r.querySelector(".dr-hours").value}));
+  let html="";
+  for(let i=1;i<=n;i++){const p=prev[i-1];html+=dayRowHtml(i,p?p.team:$("team").value,p?p.hours:$("hours").value);}
+  wrap.innerHTML=html;
+  [...wrap.querySelectorAll(".dayrow")].forEach((r,i)=>{if(prev[i])r.querySelector(".dr-date").value=prev[i].date||"";});
+  render();
+}
 function getItems(){
   const team=$("team").value,hours=+$("hours").value;const flex=hours===10&&$("flex").checked;
   const days=Math.max(1,+($("days")?$("days").value:1)||1);
   const perDay=PKG[team][hours]-(flex?7000:0);
   const tslot=($("tslot").value||"").trim();
   const hoursLine=`${hours} Hours${days>1?" / day":""}${tslot?` ( ${tslot} )`:""}`;
-  const items=[{name:`Wedding Package — ${team} Cinematographers (+1 Assistant)<br><span class="hrs">${hoursLine}</span>`,desc:flex?DELIV_FLEX:DELIV[hours],qty:days,price:perDay,amt:perDay*days}];
+  let items;
+  if($("perDay")&&$("perDay").checked){
+    // ponytail: per-day mode ignores the Flexible discount (edge add-on); use discount/custom line if needed
+    items=[...document.querySelectorAll("#dayRows .dayrow")].map((r,i)=>{
+      const t=r.querySelector(".dr-team").value,h=+r.querySelector(".dr-hours").value,p=PKG[t][h];
+      const dt=(r.querySelector(".dr-date").value||"").trim();
+      const line=`Wedding Package — Day ${i+1}${dt?` (${dt})`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${tslot?` ( ${tslot} )`:""}</span>`;
+      return {name:line,desc:DELIV[h],qty:1,price:p,amt:p};
+    });
+  } else
+  items=[{name:`Wedding Package — ${team} Cinematographers (+1 Assistant)<br><span class="hrs">${hoursLine}</span>`,desc:flex?DELIV_FLEX:DELIV[hours],qty:days,price:perDay,amt:perDay*days}];
   if($("ao_after").checked){const q=Math.max(1,+$("ao_after_q").value||1);items.push({name:"After Party (additional coverage)",desc:"6,000 per hour",qty:q,price:6000,amt:6000*q});}
   if($("ao_sde").checked) items.push({name:"Same-Day Edit",desc:"Highlight edit screened at the event",qty:1,price:7000,amt:7000});
   if($("ao_doc").checked) items.push({name:"Long Documentary",desc:"30–60 minute documentary cut",qty:1,price:7000,amt:7000});
@@ -393,8 +426,9 @@ function render(){
   renderSig();
   { const _d=($("edate").value||"").trim(), _c=($("cname").value||"").trim(), _p=($("cphone").value||"").trim();
     document.title=[_d,_c,_p].filter(Boolean).join(" ")||"BESTPARTfilms"; }
-  $("flexWrap").style.display=(+$("hours").value===10)?"flex":"none";
-  if(+$("hours").value!==10)$("flex").checked=false;
+  const pd=$("perDay")&&$("perDay").checked;
+  $("flexWrap").style.display=(!pd&&+$("hours").value===10)?"flex":"none";
+  if(pd||+$("hours").value!==10)$("flex").checked=false;
   const items=getItems();const sub=items.reduce((s,i)=>s+i.amt,0);
   const disc=+$("disc").value||0;const total=Math.max(0,sub-disc);
   let dep=$("depMode").value==="pct"?Math.round(total*(+$("depVal").value||0)/100):+$("depVal").value||0;
@@ -494,8 +528,12 @@ async function sendDoc(){
   finally{ btn.disabled=false; }
 }
 function fmtDMY(v){v=(v||"").trim();var m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m){return ("0"+m[3]).slice(-2)+"/"+("0"+m[2]).slice(-2)+"/"+m[1];}return v;}
-function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("days").value="1";$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex"].forEach(id=>$(id).checked=false);customItems=[];$("customList").innerHTML="";render();}
+function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("days").value="1";$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex","perDay"].forEach(id=>$(id).checked=false);$("dayRows").innerHTML="";$("dayRows").style.display="none";customItems=[];$("customList").innerHTML="";render();}
 document.querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",render);el.addEventListener("change",render);});
+$("perDay").addEventListener("change",buildDayRows);
+$("days").addEventListener("change",buildDayRows);
+$("dayRows").addEventListener("input",render);
+$("dayRows").addEventListener("change",render);
 $("addCustom").addEventListener("click",addCustomRow);
 try{var _u=localStorage.getItem("gasUrl");if(_u)$("gasUrl").value=_u;}catch(e){}
 $("gasUrl").addEventListener("input",function(){try{localStorage.setItem("gasUrl",$("gasUrl").value);}catch(e){}});
