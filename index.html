@@ -357,6 +357,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+const BUILD="2026-07-23-2120"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
 const PKG={"2":{5:26000,7:36000,10:52000},"3":{5:32000,7:45000,10:64000}};
 const DELIV={5:"1 Highlight Video (3–5 min) + 1 IG Reel (1 min)",7:"1 Highlight Video (5–7 min) + 1 IG Reel (1 min)",10:"2 Highlight Videos (3–5 min) + 2 IG Reels (1 min)"};
 const DELIV_FLEX="1 Highlight Video (5–7 min) + 1 IG Reel (1 min) · Flexible Option";
@@ -539,6 +540,20 @@ try{var _u=localStorage.getItem("gasUrl");if(_u)$("gasUrl").value=_u;}catch(e){}
 $("gasUrl").addEventListener("input",function(){try{localStorage.setItem("gasUrl",$("gasUrl").value);}catch(e){}});
 (function(){var d=new Date();var t=("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+d.getFullYear();$("qdate").value=t;$("rdate").value=t;})();
 render();
+// เช็คเวอร์ชันใหม่: fetch ไฟล์ล่าสุดจาก GitHub (CORS เปิด) เทียบ BUILD; ถ้าต่าง เด้งแบนเนอร์ให้แตะอัปเดต (ทะลุแคชไอคอน iOS)
+(function(){
+  var RAW="https://raw.githubusercontent.com/bestpartteam-debug/bestpartfilms/main/index.html";
+  fetch(RAW+"?_="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():null;}).then(function(t){
+    if(!t)return; var m=t.match(/BUILD="([^"]+)"/); if(!m||m[1]===BUILD)return;
+    if(document.getElementById("updBanner"))return;
+    var b=document.createElement("div"); b.id="updBanner";
+    b.style.cssText="position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#1a1a1a;color:#fff;padding:12px 14px;border-radius:11px;font-size:14px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.35)";
+    b.innerHTML='<span style="flex:1">🔄 มีเวอร์ชันใหม่ของแอพ</span><b id="updGo" style="background:var(--gold,#b08a3c);color:#fff;padding:7px 13px;border-radius:8px;cursor:pointer">แตะเพื่ออัปเดต</b><span id="updX" style="opacity:.6;cursor:pointer;padding:0 4px">✕</span>';
+    document.body.appendChild(b);
+    document.getElementById("updX").onclick=function(){b.remove();};
+    document.getElementById("updGo").onclick=function(){document.open();document.write(t);document.close();};
+  }).catch(function(){});
+})();
 </script>
 </body>
 </html>
