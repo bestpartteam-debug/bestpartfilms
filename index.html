@@ -208,6 +208,8 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
     <select id="team"><option value="2">2 Cinematographers (+1 Assistant)</option><option value="3">3 Cinematographers (+1 Assistant)</option></select>
     <label>Hours</label>
     <select id="hours"><option value="5">5 Hours</option><option value="7">7 Hours</option><option value="10">10 Hours</option></select>
+    <label>Days (จำนวนวัน)</label>
+    <select id="days"><option value="1">1 Day</option><option value="2">2 Days</option><option value="3">3 Days</option></select>
     <label>Time slot (ช่วงเวลา)</label><input id="tslot" placeholder="เช่น 7.00 - 12.00">
     <div class="chk" id="flexWrap" style="display:none"><input type="checkbox" id="flex"><span class="cx">Flexible Option — 1 Highlight (5–7 min) + 1 IG Reel</span><span class="px">−7,000</span></div>
   </div>
@@ -374,10 +376,11 @@ function renderPay(){
 let customItems=[];
 function getItems(){
   const team=$("team").value,hours=+$("hours").value;const flex=hours===10&&$("flex").checked;
-  const base=PKG[team][hours]-(flex?7000:0);
+  const days=Math.max(1,+($("days")?$("days").value:1)||1);
+  const perDay=PKG[team][hours]-(flex?7000:0);
   const tslot=($("tslot").value||"").trim();
-  const hoursLine=`${hours} Hours${tslot?` ( ${tslot} )`:""}`;
-  const items=[{name:`Wedding Package — ${team} Cinematographers (+1 Assistant)<br><span class="hrs">${hoursLine}</span>`,desc:flex?DELIV_FLEX:DELIV[hours],qty:1,price:base,amt:base}];
+  const hoursLine=`${hours} Hours${days>1?" / day":""}${tslot?` ( ${tslot} )`:""}`;
+  const items=[{name:`Wedding Package — ${team} Cinematographers (+1 Assistant)<br><span class="hrs">${hoursLine}</span>`,desc:flex?DELIV_FLEX:DELIV[hours],qty:days,price:perDay,amt:perDay*days}];
   if($("ao_after").checked){const q=Math.max(1,+$("ao_after_q").value||1);items.push({name:"After Party (additional coverage)",desc:"6,000 per hour",qty:q,price:6000,amt:6000*q});}
   if($("ao_sde").checked) items.push({name:"Same-Day Edit",desc:"Highlight edit screened at the event",qty:1,price:7000,amt:7000});
   if($("ao_doc").checked) items.push({name:"Long Documentary",desc:"30–60 minute documentary cut",qty:1,price:7000,amt:7000});
@@ -399,7 +402,7 @@ function render(){
   $("oQdate").textContent=$("qdate").value;
   $("oCname").textContent=$("cname").value||"—";
   $("oCdetail").textContent=$("cphone").value?("Tel. "+$("cphone").value):"";
-  const evdt=[$("edate").value,$("venue").value].filter(Boolean).join(" · ");$("oEventDt").textContent=evdt;
+  const evdt=[fmtDMY($("edate").value),$("venue").value].filter(Boolean).join(" · ");$("oEventDt").textContent=evdt;
   const rows=items.map(i=>`<tr><td class="nm">${i.name}${i.desc?`<div class="desc">${i.desc}</div>`:""}</td><td class="c">${i.qty}</td><td class="r">${money(i.price)}</td><td class="r">${money(i.amt)}</td></tr>`).join("");
   $("oItems").innerHTML=rows;
   $("oSub").innerHTML=cur(sub);
@@ -478,7 +481,7 @@ async function sendDoc(){
     var fname=(document.title||"BESTPARTfilms");
     var wantEmail=$("sendEmailChk").checked;
     var to=($("cemail").value||"").trim();
-    var ev=[$("edate").value,$("venue").value].filter(Boolean).join(" · ");
+    var ev=[fmtDMY($("edate").value),$("venue").value].filter(Boolean).join(" · ");
     var items=getItems().map(function(i){return "- "+i.name.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()+"  x"+i.qty+"  "+money(i.amt);}).join("\n");
     var accs=ACCOUNTS.filter(function(a){return $(a.id).checked;}).map(function(a){return "  "+a.bank+"  "+a.no+"  ("+a.name+")";}).join("\n");
     var subject=typeTh+" - BESTPARTfilms"+(cname?" - "+cname:"");
@@ -490,7 +493,8 @@ async function sendDoc(){
   }catch(err){ set("err","❌ เกิดข้อผิดพลาด: "+err); }
   finally{ btn.disabled=false; }
 }
-function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex"].forEach(id=>$(id).checked=false);customItems=[];$("customList").innerHTML="";render();}
+function fmtDMY(v){v=(v||"").trim();var m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m){return ("0"+m[3]).slice(-2)+"/"+("0"+m[2]).slice(-2)+"/"+m[1];}return v;}
+function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("days").value="1";$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex"].forEach(id=>$(id).checked=false);customItems=[];$("customList").innerHTML="";render();}
 document.querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",render);el.addEventListener("change",render);});
 $("addCustom").addEventListener("click",addCustomRow);
 try{var _u=localStorage.getItem("gasUrl");if(_u)$("gasUrl").value=_u;}catch(e){}
