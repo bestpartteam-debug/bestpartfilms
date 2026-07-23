@@ -409,7 +409,7 @@ function getItems(){
     items=[...document.querySelectorAll("#dayRows .dayrow")].map((r,i)=>{
       const t=r.querySelector(".dr-team").value,h=+r.querySelector(".dr-hours").value,p=PKG[t][h];
       const dt=(r.querySelector(".dr-date").value||"").trim();
-      const line=`Wedding Package — Day ${i+1}${dt?` (${dt})`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${tslot?` ( ${tslot} )`:""}</span>`;
+      const line=`Day ${i+1}${dt?` · ${dt}`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${tslot?` ( ${tslot} )`:""}</span>`;
       return {name:line,desc:DELIV[h],qty:1,price:p,amt:p};
     });
   } else
