@@ -378,11 +378,11 @@ function renderPay(){
 let customItems=[];
 function dayRowHtml(i,seedTeam,seedHours){
   const opt=(v,c,l)=>`<option value="${v}"${v==c?" selected":""}>${l}</option>`;
-  return `<div class="dayrow" data-day="${i}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0">`
-    +`<b style="min-width:46px">Day ${i}</b>`
-    +`<input class="dr-date" placeholder="01/12/2027" inputmode="numeric" style="flex:1;min-width:110px">`
-    +`<select class="dr-team">${opt("2",seedTeam,"2 Cine")}${opt("3",seedTeam,"3 Cine")}</select>`
-    +`<select class="dr-hours">${opt("5",seedHours,"5 Hrs")}${opt("7",seedHours,"7 Hrs")}${opt("10",seedHours,"10 Hrs")}</select>`
+  return `<div class="dayrow" data-day="${i}" style="border-top:1px solid var(--line);margin-top:10px;padding-top:2px">`
+    +`<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:8px 0 6px">Day ${i}</div>`
+    +`<label>Date (วันที่)</label><input class="dr-date" placeholder="01/12/2027" inputmode="numeric">`
+    +`<div class="row"><div><label>Team</label><select class="dr-team">${opt("2",seedTeam,"2 Cinematographers (+1 Assistant)")}${opt("3",seedTeam,"3 Cinematographers (+1 Assistant)")}</select></div>`
+    +`<div><label>Hours</label><select class="dr-hours">${opt("5",seedHours,"5 Hours")}${opt("7",seedHours,"7 Hours")}${opt("10",seedHours,"10 Hours")}</select></div></div>`
     +`</div>`;
 }
 function buildDayRows(){
