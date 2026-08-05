@@ -357,7 +357,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const BUILD="2026-07-23-2120"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
+const BUILD="2026-07-23-2145"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
 const PKG={"2":{5:26000,7:36000,10:52000},"3":{5:32000,7:45000,10:64000}};
 const DELIV={5:"1 Highlight Video (3–5 min) + 1 IG Reel (1 min)",7:"1 Highlight Video (5–7 min) + 1 IG Reel (1 min)",10:"2 Highlight Videos (3–5 min) + 2 IG Reels (1 min)"};
 const DELIV_FLEX="1 Highlight Video (5–7 min) + 1 IG Reel (1 min) · Flexible Option";
@@ -409,7 +409,7 @@ function getItems(){
     // ponytail: per-day mode ignores the Flexible discount (edge add-on); use discount/custom line if needed
     items=[...document.querySelectorAll("#dayRows .dayrow")].map((r,i)=>{
       const t=r.querySelector(".dr-team").value,h=+r.querySelector(".dr-hours").value,p=PKG[t][h];
-      const dt=(r.querySelector(".dr-date").value||"").trim();
+      const dt=fmtDMY((r.querySelector(".dr-date").value||"").trim());
       const line=`Day ${i+1}${dt?` · ${dt}`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${tslot?` ( ${tslot} )`:""}</span>`;
       return {name:line,desc:DELIV[h],qty:1,price:p,amt:p};
     });
@@ -528,13 +528,16 @@ async function sendDoc(){
   }catch(err){ set("err","❌ เกิดข้อผิดพลาด: "+err); }
   finally{ btn.disabled=false; }
 }
-function fmtDMY(v){v=(v||"").trim();var m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m){return ("0"+m[3]).slice(-2)+"/"+("0"+m[2]).slice(-2)+"/"+m[1];}return v;}
+function fmtDMY(v){v=(v||"").trim();var m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m){return ("0"+m[3]).slice(-2)+"/"+("0"+m[2]).slice(-2)+"/"+m[1];}var d=v.replace(/\D/g,"");if(/^\d{8}$/.test(d))return d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4);return v;}
+function snapDate(el){var d=(el.value||"").replace(/\D/g,"").slice(0,8);if(d.length===8)el.value=d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4);}
 function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("days").value="1";$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex","perDay"].forEach(id=>$(id).checked=false);$("dayRows").innerHTML="";$("dayRows").style.display="none";customItems=[];$("customList").innerHTML="";render();}
 document.querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",render);el.addEventListener("change",render);});
 $("perDay").addEventListener("change",buildDayRows);
 $("days").addEventListener("change",buildDayRows);
 $("dayRows").addEventListener("input",render);
 $("dayRows").addEventListener("change",render);
+$("edate").addEventListener("blur",function(){snapDate(this);render();});
+$("dayRows").addEventListener("blur",function(e){if(e.target.classList&&e.target.classList.contains("dr-date")){snapDate(e.target);render();}},true);
 $("addCustom").addEventListener("click",addCustomRow);
 try{var _u=localStorage.getItem("gasUrl");if(_u)$("gasUrl").value=_u;}catch(e){}
 $("gasUrl").addEventListener("input",function(){try{localStorage.setItem("gasUrl",$("gasUrl").value);}catch(e){}});
