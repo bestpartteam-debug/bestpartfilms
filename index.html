@@ -339,7 +339,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
       </div>
       <div class="recbanner">
         <div class="left"><div class="rl" id="oRtypeLbl">Deposit received</div><div class="rv" id="oRamt">฿0</div><div class="rs" id="oRamtWords"></div></div>
-        <div class="right">Method — <b id="oRmethod"></b><br>Total — <b id="oRtotal"></b><br>Paid to date — <b id="oRpaid"></b><br>Balance remaining — <b class="bg" id="oRremain"></b></div>
+        <div class="right">Method — <b id="oRmethod"></b><br><span id="oRdiscRow" style="display:none">Discount — <b id="oRdisc"></b><br></span>Total — <b id="oRtotal"></b><br>Paid to date — <b id="oRpaid"></b><br>Balance remaining — <b class="bg" id="oRremain"></b></div>
       </div>
       <table class="items" style="margin-top:24px"><thead><tr><th>Description</th><th class="c">Qty</th><th class="r">Unit</th><th class="r">Amount</th></tr></thead><tbody id="oRitems"></tbody></table>
       <div class="foot">
@@ -360,7 +360,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const BUILD="2026-08-05-2210"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
+const BUILD="2026-08-05-2245"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
 const PKG={"2":{5:26000,7:36000,10:52000},"3":{5:32000,7:45000,10:64000}};
 const DELIV={5:"1 Highlight Video (3–5 min) + 1 IG Reel (1 min)",7:"1 Highlight Video (5–7 min) + 1 IG Reel (1 min)",10:"2 Highlight Videos (3–5 min) + 2 IG Reels (1 min)"};
 const DELIV_FLEX="1 Highlight Video (5–7 min) + 1 IG Reel (1 min) · Flexible Option";
@@ -462,6 +462,7 @@ function render(){
   $("oRpkg").textContent=evdt;$("oRtypeLbl").textContent=typeLbl;
   $("oRamt").innerHTML=big(ramt);$("oRamtWords").textContent=numWords(ramt);
   $("oRmethod").textContent=$("rmethod").value;$("oRtotal").textContent=money(total);
+  $("oRdiscRow").style.display=disc>0?"":"none";$("oRdisc").textContent="−"+money(disc);
   $("oRpaid").textContent=money(paid);$("oRremain").textContent=money(remain);
   $("oRitems").innerHTML=rows;
 }
