@@ -360,7 +360,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const BUILD="2026-08-24-1215"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
+const BUILD="2026-08-24-1235"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
 const PKG={"2":{5:26000,7:36000,10:52000},"3":{5:32000,7:45000,10:64000}};
 const DELIV={5:"1 Highlight Video (3–5 min) + 1 IG Reel (1 min)",7:"1 Highlight Video (5–7 min) + 1 IG Reel (1 min)",10:"2 Highlight Videos (3–5 min) + 2 IG Reels (1 min)"};
 const DELIV_FLEX="1 Highlight Video (5–7 min) + 1 IG Reel (1 min) · Flexible Option";
@@ -380,6 +380,7 @@ function renderPay(){
   $("oPayQ").innerHTML=h;$("oPayR").innerHTML=h;
 }
 let customItems=[];
+function fmtTslot(t){return t?(t.trim().startsWith("(")?` ${t}`:` ( ${t} )`):"";}
 function dayRowHtml(i,seedTeam,seedHours){
   const opt=(v,c,l)=>`<option value="${v}"${v==c?" selected":""}>${l}</option>`;
   return `<div class="dayrow" data-day="${i}" style="border-top:1px solid var(--line);margin-top:10px;padding-top:2px">`
@@ -406,7 +407,7 @@ function getItems(){
   const days=Math.max(1,+($("days")?$("days").value:1)||1);
   const perDay=PKG[team][hours]-(flex?7000:0);
   const tslot=($("tslot").value||"").trim();
-  const hoursLine=`${hours} Hours${days>1?" / day":""}${tslot?` ( ${tslot} )`:""}`;
+  const hoursLine=`${hours} Hours${days>1?" / day":""}${fmtTslot(tslot)}`;
   let items;
   if($("pkgOn")&&!$("pkgOn").checked){
     items=[];
@@ -415,7 +416,7 @@ function getItems(){
     items=[...document.querySelectorAll("#dayRows .dayrow")].map((r,i)=>{
       const t=r.querySelector(".dr-team").value,h=+r.querySelector(".dr-hours").value,p=PKG[t][h];
       const dt=fmtDMY((r.querySelector(".dr-date").value||"").trim());
-      const line=`Day ${i+1}${dt?` · ${dt}`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${tslot?` ( ${tslot} )`:""}</span>`;
+      const line=`Day ${i+1}${dt?` · ${dt}`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${fmtTslot(tslot)}</span>`;
       return {name:line,desc:DELIV[h],qty:1,price:p,amt:p};
     });
   } else
