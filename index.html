@@ -204,18 +204,31 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
   </div>
 
   <div class="grp"><h3>Package</h3>
-    <div class="chk"><input type="checkbox" id="pkgOn" checked><span class="cx">รวมแพ็กเกจถ่ายงาน (Team/Hours)</span></div>
-    <div id="pkgFields">
+    <div class="chk"><input type="checkbox" id="pkgOn1" checked><span class="cx">รายการที่ 1</span></div>
+    <div id="pkgFields1">
     <label>Team</label>
-    <select id="team"><option value="2">2 Cinematographers (+1 Assistant)</option><option value="3">3 Cinematographers (+1 Assistant)</option></select>
+    <select id="team1"><option value="2">2 Cinematographers (+1 Assistant)</option><option value="3">3 Cinematographers (+1 Assistant)</option></select>
     <label>Hours</label>
-    <select id="hours"><option value="5">5 Hours</option><option value="7">7 Hours</option><option value="10">10 Hours</option></select>
+    <select id="hours1"><option value="5">5 Hours</option><option value="7">7 Hours</option><option value="10">10 Hours</option></select>
     <label>Days (จำนวนวัน)</label>
-    <select id="days"><option value="1">1 Day</option><option value="2">2 Days</option><option value="3">3 Days</option></select>
-    <div class="chk"><input type="checkbox" id="perDay"><span class="cx">ระบุแต่ละวันแยก (ต่างชั่วโมง/ทีม/วันที่)</span></div>
-    <div id="dayRows" style="display:none"></div>
-    <label>Time slot (ช่วงเวลา)</label><input id="tslot" placeholder="เช่น 7.00 - 12.00">
-    <div class="chk" id="flexWrap" style="display:none"><input type="checkbox" id="flex"><span class="cx">Flexible Option — 1 Highlight (5–7 min) + 1 IG Reel</span><span class="px">−7,000</span></div>
+    <select id="days1"><option value="1">1 Day</option><option value="2">2 Days</option><option value="3">3 Days</option></select>
+    <div class="chk"><input type="checkbox" id="perDay1"><span class="cx">ระบุแต่ละวันแยก (ต่างชั่วโมง/ทีม/วันที่)</span></div>
+    <div id="dayRows1" style="display:none"></div>
+    <label>Time slot (ช่วงเวลา)</label><input id="tslot1" placeholder="เช่น 7.00 - 12.00">
+    <div class="chk" id="flexWrap1" style="display:none"><input type="checkbox" id="flex1"><span class="cx">Flexible Option — 1 Highlight (5–7 min) + 1 IG Reel</span><span class="px">−7,000</span></div>
+    </div>
+    <div class="chk"><input type="checkbox" id="pkgOn2"><span class="cx">รายการที่ 2</span></div>
+    <div id="pkgFields2" style="display:none">
+    <label>Team</label>
+    <select id="team2"><option value="2">2 Cinematographers (+1 Assistant)</option><option value="3">3 Cinematographers (+1 Assistant)</option></select>
+    <label>Hours</label>
+    <select id="hours2"><option value="5">5 Hours</option><option value="7">7 Hours</option><option value="10">10 Hours</option></select>
+    <label>Days (จำนวนวัน)</label>
+    <select id="days2"><option value="1">1 Day</option><option value="2">2 Days</option><option value="3">3 Days</option></select>
+    <div class="chk"><input type="checkbox" id="perDay2"><span class="cx">ระบุแต่ละวันแยก (ต่างชั่วโมง/ทีม/วันที่)</span></div>
+    <div id="dayRows2" style="display:none"></div>
+    <label>Time slot (ช่วงเวลา)</label><input id="tslot2" placeholder="เช่น 17.00 - 22.00">
+    <div class="chk" id="flexWrap2" style="display:none"><input type="checkbox" id="flex2"><span class="cx">Flexible Option — 1 Highlight (5–7 min) + 1 IG Reel</span><span class="px">−7,000</span></div>
     </div>
   </div>
 
@@ -360,7 +373,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const BUILD="2026-08-24-1235"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
+const BUILD="2026-10-28-1230"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
 const PKG={"2":{5:26000,7:36000,10:52000},"3":{5:32000,7:45000,10:64000}};
 const DELIV={5:"1 Highlight Video (3–5 min) + 1 IG Reel (1 min)",7:"1 Highlight Video (5–7 min) + 1 IG Reel (1 min)",10:"2 Highlight Videos (3–5 min) + 2 IG Reels (1 min)"};
 const DELIV_FLEX="1 Highlight Video (5–7 min) + 1 IG Reel (1 min) · Flexible Option";
@@ -381,6 +394,7 @@ function renderPay(){
 }
 let customItems=[];
 function fmtTslot(t){return t?(t.trim().startsWith("(")?` ${t}`:` ( ${t} )`):"";}
+function pkg(n){return {on:$("pkgOn"+n),fields:$("pkgFields"+n),team:$("team"+n),hours:$("hours"+n),days:$("days"+n),perDay:$("perDay"+n),dayRows:$("dayRows"+n),tslot:$("tslot"+n),flex:$("flex"+n),flexWrap:$("flexWrap"+n)};}
 function dayRowHtml(i,seedTeam,seedHours){
   const opt=(v,c,l)=>`<option value="${v}"${v==c?" selected":""}>${l}</option>`;
   return `<div class="dayrow" data-day="${i}" style="border-top:1px solid var(--line);margin-top:10px;padding-top:2px">`
@@ -390,37 +404,36 @@ function dayRowHtml(i,seedTeam,seedHours){
     +`<div><label>Hours</label><select class="dr-hours">${opt("5",seedHours,"5 Hours")}${opt("7",seedHours,"7 Hours")}${opt("10",seedHours,"10 Hours")}</select></div></div>`
     +`</div>`;
 }
-function buildDayRows(){
-  const wrap=$("dayRows"),on=$("perDay").checked;
+function buildDayRows(n){
+  const p=pkg(n),wrap=p.dayRows,on=p.perDay.checked;
   wrap.style.display=on?"block":"none";
   if(!on){wrap.innerHTML="";render();return;}
-  const n=Math.max(1,+$("days").value||1);
+  const days=Math.max(1,+p.days.value||1);
   const prev=[...wrap.querySelectorAll(".dayrow")].map(r=>({date:r.querySelector(".dr-date").value,team:r.querySelector(".dr-team").value,hours:r.querySelector(".dr-hours").value}));
   let html="";
-  for(let i=1;i<=n;i++){const p=prev[i-1];html+=dayRowHtml(i,p?p.team:$("team").value,p?p.hours:$("hours").value);}
+  for(let i=1;i<=days;i++){const prevRow=prev[i-1];html+=dayRowHtml(i,prevRow?prevRow.team:p.team.value,prevRow?prevRow.hours:p.hours.value);}
   wrap.innerHTML=html;
   [...wrap.querySelectorAll(".dayrow")].forEach((r,i)=>{if(prev[i])r.querySelector(".dr-date").value=prev[i].date||"";});
   render();
 }
-function getItems(){
-  const team=$("team").value,hours=+$("hours").value;const flex=hours===10&&$("flex").checked;
-  const days=Math.max(1,+($("days")?$("days").value:1)||1);
-  const perDay=PKG[team][hours]-(flex?7000:0);
-  const tslot=($("tslot").value||"").trim();
+function getPackageItems(n){
+  const p=pkg(n);if(!p.on.checked)return [];
+  const team=p.team.value,hours=+p.hours.value,flex=hours===10&&p.flex.checked;
+  const days=Math.max(1,+p.days.value||1),price=PKG[team][hours]-(flex?7000:0),tslot=(p.tslot.value||"").trim();
   const hoursLine=`${hours} Hours${days>1?" / day":""}${fmtTslot(tslot)}`;
-  let items;
-  if($("pkgOn")&&!$("pkgOn").checked){
-    items=[];
-  } else if($("perDay")&&$("perDay").checked){
+  if(p.perDay.checked){
     // ponytail: per-day mode ignores the Flexible discount (edge add-on); use discount/custom line if needed
-    items=[...document.querySelectorAll("#dayRows .dayrow")].map((r,i)=>{
+    return [...p.dayRows.querySelectorAll(".dayrow")].map((r,i)=>{
       const t=r.querySelector(".dr-team").value,h=+r.querySelector(".dr-hours").value,p=PKG[t][h];
       const dt=fmtDMY((r.querySelector(".dr-date").value||"").trim());
-      const line=`Day ${i+1}${dt?` · ${dt}`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${fmtTslot(tslot)}</span>`;
+      const line=`Package ${n} · Day ${i+1}${dt?` · ${dt}`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${fmtTslot(tslot)}</span>`;
       return {name:line,desc:DELIV[h],qty:1,price:p,amt:p};
     });
-  } else
-  items=[{name:`Wedding Package — ${team} Cinematographers (+1 Assistant)<br><span class="hrs">${hoursLine}</span>`,desc:flex?DELIV_FLEX:DELIV[hours],qty:days,price:perDay,amt:perDay*days}];
+  }
+  return [{name:`Wedding Package ${n} — ${team} Cinematographers (+1 Assistant)<br><span class="hrs">${hoursLine}</span>`,desc:flex?DELIV_FLEX:DELIV[hours],qty:days,price,amt:price*days}];
+}
+function getItems(){
+  let items=[...getPackageItems(1),...getPackageItems(2)];
   if($("ao_after").checked){const q=Math.max(1,+$("ao_after_q").value||1);items.push({name:"After Party (additional coverage)",desc:"6,000 per hour",qty:q,price:6000,amt:6000*q});}
   if($("ao_sde").checked) items.push({name:"Same-Day Edit",desc:"Highlight edit screened at the event",qty:1,price:7000,amt:7000});
   if($("ao_doc").checked) items.push({name:"Long Documentary",desc:"30–60 minute documentary cut",qty:1,price:7000,amt:7000});
@@ -433,10 +446,7 @@ function render(){
   renderSig();
   { const _d=($("edate").value||"").trim(), _c=($("cname").value||"").trim(), _p=($("cphone").value||"").trim();
     document.title=[_d,_c,_p].filter(Boolean).join(" ")||"BESTPARTfilms"; }
-  $("pkgFields").style.display=$("pkgOn").checked?"":"none";
-  const pd=$("perDay")&&$("perDay").checked;
-  $("flexWrap").style.display=(!pd&&+$("hours").value===10)?"flex":"none";
-  if(pd||+$("hours").value!==10)$("flex").checked=false;
+  [1,2].forEach(n=>{const p=pkg(n),pd=p.perDay.checked;p.fields.style.display=p.on.checked?"":"none";p.flexWrap.style.display=(!pd&&+p.hours.value===10)?"flex":"none";if(pd||+p.hours.value!==10)p.flex.checked=false;});
   const items=getItems();const sub=items.reduce((s,i)=>s+i.amt,0);
   const disc=+$("disc").value||0;const total=Math.max(0,sub-disc);
   let dep=$("depMode").value==="pct"?Math.round(total*(+$("depVal").value||0)/100):+$("depVal").value||0;
@@ -503,7 +513,7 @@ async function downloadPdf(){
     var doc=isQ?$("docQ"):$("docR");
     var canvas=await captureDoc(doc);
     var pdf=buildPdfFromCanvas(canvas);
-    pdf.save((document.title||"BESTPARTfilms")+".pdf");
+    pdf.save(fileName()+".pdf");
     set("ok","✅ สร้าง PDF แล้ว — เช็คไฟล์ที่ดาวน์โหลด/หน้าแชร์");
   }catch(err){set("err","❌ เกิดข้อผิดพลาด: "+err);}
 }
@@ -523,7 +533,7 @@ async function sendDoc(){
     var b64=pdf.output("datauristring").split(",")[1];
     var cname=($("cname").value||"").trim();
     var typeTh=isQ?"ใบเสนอราคา":"ใบยืนยันรับเงิน";
-    var fname=(document.title||"BESTPARTfilms");
+    var fname=fileName();
     var wantEmail=$("sendEmailChk").checked;
     var to=($("cemail").value||"").split(/[,;\s]+/).filter(Boolean).join(",");
     var ev=[fmtDMY($("edate").value),$("venue").value].filter(Boolean).join(" · ");
@@ -539,15 +549,12 @@ async function sendDoc(){
   finally{ btn.disabled=false; }
 }
 function fmtDMY(v){v=(v||"").trim();var m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m){return ("0"+m[3]).slice(-2)+"/"+("0"+m[2]).slice(-2)+"/"+m[1];}var d=v.replace(/\D/g,"");if(/^\d{8}$/.test(d))return d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4);return v;}
+function fileName(){const d=fmtDMY($("edate").value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/),date=d?`${d[3]}-${d[2]}-${d[1]}`:"No-date";return [date,$("cname").value.trim(),$("cphone").value.trim()].filter(Boolean).join(" ")||"BESTPARTfilms";}
 function snapDate(el){var d=(el.value||"").replace(/\D/g,"").slice(0,8);if(d.length===8)el.value=d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4);}
-function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("days").value="1";$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex","perDay"].forEach(id=>$(id).checked=false);$("pkgOn").checked=true;$("dayRows").innerHTML="";$("dayRows").style.display="none";customItems=[];$("customList").innerHTML="";render();}
+function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex1","flex2","perDay1","perDay2","pkgOn2"].forEach(id=>$(id).checked=false);$("pkgOn1").checked=true;[1,2].forEach(n=>{const p=pkg(n);p.days.value="1";p.dayRows.innerHTML="";p.dayRows.style.display="none";});customItems=[];$("customList").innerHTML="";render();}
 document.querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",render);el.addEventListener("change",render);});
-$("perDay").addEventListener("change",buildDayRows);
-$("days").addEventListener("change",buildDayRows);
-$("dayRows").addEventListener("input",render);
-$("dayRows").addEventListener("change",render);
+[1,2].forEach(n=>{const p=pkg(n);p.perDay.addEventListener("change",()=>buildDayRows(n));p.days.addEventListener("change",()=>buildDayRows(n));p.dayRows.addEventListener("input",render);p.dayRows.addEventListener("change",render);p.dayRows.addEventListener("blur",function(e){if(e.target.classList&&e.target.classList.contains("dr-date")){snapDate(e.target);render();}},true);});
 $("edate").addEventListener("blur",function(){snapDate(this);render();});
-$("dayRows").addEventListener("blur",function(e){if(e.target.classList&&e.target.classList.contains("dr-date")){snapDate(e.target);render();}},true);
 $("addCustom").addEventListener("click",addCustomRow);
 try{var _u=localStorage.getItem("gasUrl");if(_u)$("gasUrl").value=_u;}catch(e){}
 $("gasUrl").addEventListener("input",function(){try{localStorage.setItem("gasUrl",$("gasUrl").value);}catch(e){}});
