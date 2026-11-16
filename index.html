@@ -674,9 +674,9 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
     <label>Date received</label><input id="rdate" value="22/07/2026">
     <label>Payment type</label>
     <select id="rtype"><option value="dep">Deposit</option><option value="full">Full payment</option><option value="inst">Installment</option></select>
-    <div class="row"><div><label>Amount received (THB)</label><input id="ramt" type="number" min="0" value="0"></div>
+    <div class="row"><div><label>Amount received (THB)</label><input id="ramt" type="number" min="0" placeholder="อัตโนมัติ"></div>
     <div><label>Method</label><select id="rmethod"><option>Bank transfer — Kasikorn</option><option>Bank transfer — SCB</option><option>Bank transfer — Krungthai</option><option>Cash</option><option>PromptPay</option><option>Other</option></select></div></div>
-    <div class="hint">Leave amount as 0 to auto-fill the deposit.</div>
+    <div class="hint">เว้นว่างเพื่อคำนวณอัตโนมัติ หรือกรอกยอดที่รับจริง</div>
   </div>
 
   <div class="grp"><h3>Notes · หมายเหตุเพิ่มเติม</h3>
@@ -1026,13 +1026,15 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const BUILD="2026-11-16-2055"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
+const BUILD="2026-11-16-2230"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
 const PKG={"2":{5:26000,7:36000,10:52000},"3":{5:32000,7:45000,10:64000}};
 const DELIV={5:"1 Highlight Video (3–5 min) + 1 IG Reel (1 min)",7:"1 Highlight Video (5–7 min) + 1 IG Reel (1 min)",10:"2 Highlight Videos (3–5 min) + 2 IG Reels (1 min)"};
 const DELIV_FLEX="1 Highlight Video (5–7 min) + 1 IG Reel (1 min) · Flexible Option";
 const $=id=>document.getElementById(id);
 const money=n=>"฿"+Number(n||0).toLocaleString("en-US");
 const fmt=n=>Number(n||0).toLocaleString("en-US");
+const fmtMoney=n=>Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const escapeHtml=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const big=n=>`<span class="cur">THB</span>${fmt(n)}`;
 const cur=n=>`<span class="bt">฿</span>${fmt(n)}`;
 const ACCOUNTS=[
@@ -1053,6 +1055,7 @@ function dayRowHtml(i,seedTeam,seedHours){
   return `<div class="dayrow" data-day="${i}" style="border-top:1px solid var(--line);margin-top:10px;padding-top:2px">`
     +`<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:8px 0 6px">Day ${i}</div>`
     +`<label>Date (วันที่)</label><input class="dr-date" placeholder="01/12/2027" inputmode="numeric">`
+    +`<label>Time slot (ช่วงเวลา)</label><input class="dr-tslot" placeholder="เช่น 7.00 - 12.00">`
     +`<div class="row"><div><label>Team</label><select class="dr-team">${opt("2",seedTeam,"2 Cinematographers (+1 Assistant)")}${opt("3",seedTeam,"3 Cinematographers (+1 Assistant)")}</select></div>`
     +`<div><label>Hours</label><select class="dr-hours">${opt("5",seedHours,"5 Hours")}${opt("7",seedHours,"7 Hours")}${opt("10",seedHours,"10 Hours")}</select></div></div>`
     +`</div>`;
@@ -1060,30 +1063,32 @@ function dayRowHtml(i,seedTeam,seedHours){
 function buildDayRows(n){
   const p=pkg(n),wrap=p.dayRows,on=p.perDay.checked;
   wrap.style.display=on?"block":"none";
-  if(!on){wrap.innerHTML="";render();return;}
+  if(!on){render();return;}
   const days=Math.max(1,+p.days.value||1);
-  const prev=[...wrap.querySelectorAll(".dayrow")].map(r=>({date:r.querySelector(".dr-date").value,team:r.querySelector(".dr-team").value,hours:r.querySelector(".dr-hours").value}));
+  const prev=[...wrap.querySelectorAll(".dayrow")].map(r=>({date:r.querySelector(".dr-date").value,tslot:r.querySelector(".dr-tslot").value,team:r.querySelector(".dr-team").value,hours:r.querySelector(".dr-hours").value}));
   let html="";
   for(let i=1;i<=days;i++){const prevRow=prev[i-1];html+=dayRowHtml(i,prevRow?prevRow.team:p.team.value,prevRow?prevRow.hours:p.hours.value);}
   wrap.innerHTML=html;
-  [...wrap.querySelectorAll(".dayrow")].forEach((r,i)=>{if(prev[i])r.querySelector(".dr-date").value=prev[i].date||"";});
+  [...wrap.querySelectorAll(".dayrow")].forEach((r,i)=>{if(prev[i]){r.querySelector(".dr-date").value=prev[i].date||"";r.querySelector(".dr-tslot").value=prev[i].tslot||"";}});
   render();
 }
 function getPackageItems(n){
   const p=pkg(n);if(!p.on.checked)return [];
   const team=p.team.value,hours=+p.hours.value,flex=hours===10&&p.flex.checked;
   const days=Math.max(1,+p.days.value||1),price=PKG[team][hours]-(flex?7000:0),tslot=(p.tslot.value||"").trim();
-  const hoursLine=`${hours} Hours${days>1?" / day":""}${fmtTslot(tslot)}`;
+  const hoursLine=`${hours} Hours${days>1?" / day":""}${fmtTslot(escapeHtml(tslot))}`;
+  const label=pkg(1).on.checked&&pkg(2).on.checked?`Wedding Package ${n}`:"Wedding Package";
   if(p.perDay.checked){
     // ponytail: per-day mode ignores the Flexible discount (edge add-on); use discount/custom line if needed
     return [...p.dayRows.querySelectorAll(".dayrow")].map((r,i)=>{
       const t=r.querySelector(".dr-team").value,h=+r.querySelector(".dr-hours").value,p=PKG[t][h];
       const dt=fmtDMY((r.querySelector(".dr-date").value||"").trim());
-      const line=`Package ${n} · Day ${i+1}${dt?` · ${dt}`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${fmtTslot(tslot)}</span>`;
+      const daySlot=(r.querySelector(".dr-tslot").value||"").trim()||tslot;
+      const line=`${label} · Day ${i+1}${dt?` · ${escapeHtml(dt)}`:""} — ${t} Cinematographers (+1 Assistant)<br><span class="hrs">${h} Hours${fmtTslot(escapeHtml(daySlot))}</span>`;
       return {name:line,desc:DELIV[h],qty:1,price:p,amt:p};
     });
   }
-  return [{name:`Wedding Package ${n} — ${team} Cinematographers (+1 Assistant)<br><span class="hrs">${hoursLine}</span>`,desc:flex?DELIV_FLEX:DELIV[hours],qty:days,price,amt:price*days}];
+  return [{name:`${label} — ${team} Cinematographers (+1 Assistant)<br><span class="hrs">${hoursLine}</span>`,desc:(flex?DELIV_FLEX:DELIV[hours])+(days>1?" (per day)":""),qty:days,price,amt:price*days}];
 }
 function getItems(){
   let items=[...getPackageItems(1),...getPackageItems(2)];
@@ -1091,7 +1096,7 @@ function getItems(){
   if($("ao_sde").checked){const q=Math.max(1,+$("ao_sde_q").value||1);items.push({name:"Same-Day Edit",desc:"Highlight edit screened at the event",qty:q,price:7000,amt:7000*q});}
   if($("ao_doc").checked){const q=Math.max(1,+$("ao_doc_q").value||1);items.push({name:"Long Documentary",desc:"30–60 minute documentary cut",qty:q,price:7000,amt:7000*q});}
   if($("ao_love").checked) items.push({name:"Wedding Presentation Film — Love Story",desc:"5–7 minute presentation film",qty:1,price:30000,amt:30000});
-  customItems.forEach(c=>{if(c.name)items.push({name:c.name,desc:"",qty:1,price:+c.price||0,amt:+c.price||0});});
+  customItems.forEach(c=>{if(c.name)items.push({name:escapeHtml(c.name),desc:"",qty:1,price:+c.price||0,amt:+c.price||0});});
   return items;
 }
 function render(){
@@ -1101,9 +1106,9 @@ function render(){
     document.title=[_d,_c,_p].filter(Boolean).join(" ")||"BESTPARTfilms"; }
   [1,2].forEach(n=>{const p=pkg(n),pd=p.perDay.checked;p.fields.style.display=p.on.checked?"":"none";p.flexWrap.style.display=(!pd&&+p.hours.value===10)?"flex":"none";if(pd||+p.hours.value!==10)p.flex.checked=false;});
   const items=getItems();const sub=items.reduce((s,i)=>s+i.amt,0);
-  const disc=+$("disc").value||0;const total=Math.max(0,sub-disc);
+  const disc=Math.min(sub,Math.max(0,+$("disc").value||0));const total=Math.max(0,sub-disc);
   let dep=$("depMode").value==="pct"?Math.round(total*(+$("depVal").value||0)/100):+$("depVal").value||0;
-  dep=Math.min(dep,total);const bal=total-dep;
+  dep=Math.max(0,Math.min(dep,total));const bal=total-dep;
   $("oQdate").textContent=$("qdate").value;
   if($("oSigDateQ"))$("oSigDateQ").textContent="Date "+($("qdate").value||"");
   if($("oSigDateR"))$("oSigDateR").textContent="Date "+($("rdate").value||"");
@@ -1117,8 +1122,8 @@ function render(){
   $("oDisc").innerHTML="−"+cur(disc);
   $("oTotal").innerHTML=cur(total);$("oDep").innerHTML=cur(dep);$("oBal").innerHTML=cur(bal);
   $("oDepLbl").textContent=($("depMode").value==="pct"&&(+$("depVal").value))?`Deposit (${+$("depVal").value}%)`:"Deposit";
-  let ramt=+$("ramt").value||0;const rtype=$("rtype").value;
-  if(ramt===0) ramt=rtype==="full"?total:dep;ramt=Math.min(ramt,total);
+  let ramt=$("ramt").value===""?($("rtype").value==="full"?total:dep):+$("ramt").value||0;const rtype=$("rtype").value;
+  ramt=Math.max(0,Math.min(ramt,total));
   const paid=ramt,remain=Math.max(0,total-paid);
   const typeLbl={dep:"Deposit received",full:"Full payment received",inst:"Partial payment received"}[rtype];
   $("oRdate").textContent=$("rdate").value;
@@ -1148,7 +1153,23 @@ function numWords(n){
   if(n>0)out+=three(n);out=out.trim();return out.charAt(0).toUpperCase()+out.slice(1)+" baht only";
 }
 function showDoc(w){$("docQ").classList.toggle("hidden",w!=="q");$("docR").classList.toggle("hidden",w!=="r");$("tabQ").classList.toggle("on",w==="q");$("tabR").classList.toggle("on",w==="r");}
-function addCustomRow(){const idx=customItems.length;customItems.push({name:"",price:0});const wrap=document.createElement("div");wrap.className="customitem";wrap.innerHTML=`<input placeholder="Item name" oninput="customItems[${idx}].name=this.value;render()"><input type="number" placeholder="฿" oninput="customItems[${idx}].price=this.value;render()">`;$("customList").appendChild(wrap);}
+function addCustomRow(){
+  customItems.push({name:"",price:0});
+  renderCustomRows();
+}
+function renderCustomRows(){
+  const list=$("customList");list.innerHTML="";
+  customItems.forEach((item,i)=>{
+    const row=document.createElement("div");row.className="customitem";
+    const name=document.createElement("input");name.placeholder="Item name";name.value=item.name;
+    name.oninput=()=>{item.name=name.value;render();};
+    const price=document.createElement("input");price.type="number";price.placeholder="฿";price.value=item.price||"";
+    price.oninput=()=>{item.price=price.value;render();};
+    const del=document.createElement("button");del.type="button";del.textContent="✕";del.title="ลบรายการ";
+    del.onclick=()=>{customItems.splice(i,1);renderCustomRows();render();};
+    row.append(name,price,del);list.append(row);
+  });
+}
 async function captureDoc(doc){
   // บังคับเรนเดอร์แบบเดสก์ท็อป (A4) เสมอ แม้กดจากมือถือ
   if(document.fonts&&document.fonts.ready){try{await document.fonts.ready;}catch(e){}}
@@ -1184,8 +1205,13 @@ async function sendDoc(){
   var url=($("gasUrl").value||"").trim();
   if(!/^https:\/\/script\.google\.com\//.test(url)){ set("err","⚠ ยังไม่ได้ใส่ลิงก์ Apps Script (ดูวิธีในคู่มือ)"); return; }
   if(typeof html2canvas==="undefined"||!window.jspdf){ set("err","⚠ ต้องต่ออินเทอร์เน็ตเพื่อสร้าง PDF"); return; }
+  if(appMode==="wedding"&&fileName().startsWith("No-date")){set("err","⚠ กรุณาระบุวันที่งานใน Event date หรือรายการแพ็กเกจก่อนส่ง");$("edate").focus();return;}
   var isQ=!$("docQ").classList.contains("hidden");
   var doc=appMode==="corporate"?$("docC"):(isQ?$("docQ"):$("docR"));
+  var wantEmail=$("sendEmailChk").checked;
+  var emailField=appMode==="corporate"?$("corpClientEmail"):$("cemail");
+  if(wantEmail&&!emailField.value.trim()){set("err","⚠ กรุณากรอกอีเมลลูกค้า หรือเอาเครื่องหมายส่งอีเมลออก");emailField.focus();return;}
+  if(wantEmail&&!emailField.value.trim().split(/[,;\s]+/).every(a=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a))){set("err","⚠ รูปแบบอีเมลลูกค้าไม่ถูกต้อง");emailField.focus();return;}
   var btn=$("sendBtn"); btn.disabled=true;
   try{
     set("","⏳ กำลังสร้าง PDF...");
@@ -1195,14 +1221,14 @@ async function sendDoc(){
     var cname=($("cname").value||"").trim();
     var typeTh=isQ?"ใบเสนอราคา":"ใบยืนยันรับเงิน";
     var fname=fileName();
-    var wantEmail=$("sendEmailChk").checked;
     var to=($("cemail").value||"").split(/[,;\s]+/).filter(Boolean).join(",");
     var ev=[fmtDMY($("edate").value),$("venue").value].filter(Boolean).join(" · ");
     var cnote=($("customNotes")?$("customNotes").value:"").trim();
     var items=getItems().map(function(i){return "- "+i.name.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()+"  x"+i.qty+"  "+money(i.amt);}).join("\n");
     var accs=ACCOUNTS.filter(function(a){return $(a.id).checked;}).map(function(a){return "  "+a.bank+"  "+a.no+"  ("+a.name+")";}).join("\n");
     var subject=typeTh+" - BESTPARTfilms"+(cname?" - "+cname:"");
-    var body=["เรียน "+(cname||"ลูกค้า"),"","BESTPARTfilms ขอส่ง"+typeTh+(ev?" สำหรับงาน "+ev:""),"","รายการ:",items,"","ยอดรวมทั้งสิ้น (Total): "+$("oTotal").textContent,"มัดจำ (Deposit): "+$("oDep").textContent,"คงเหลือ (Balance): "+$("oBal").textContent,""].concat(cnote?["หมายเหตุเพิ่มเติม (Notes):",cnote,""]:[]).concat(accs?["ช่องทางชำระเงิน:",accs,""]:[]).concat(["รายละเอียดในไฟล์ PDF ที่แนบมาพร้อมอีเมลนี้","","ขอบคุณครับ","BESTPARTfilms","โทร. 089-8454931 / 081-8433480","IG/FB: bestpart.films"]).join("\n");
+    var paymentLines=isQ?["มัดจำ (Deposit): "+$("oDep").textContent,"คงเหลือ (Balance): "+$("oBal").textContent]:["ยอดเงินรับจริง (Amount received): "+$("oRpaid").textContent,"คงเหลือ (Balance): "+$("oRremain").textContent];
+    var body=["เรียน "+(cname||"ลูกค้า"),"","BESTPARTfilms ขอส่ง"+typeTh+(ev?" สำหรับงาน "+ev:""),"","รายการ:",items,"","ยอดรวมก่อนส่วนลด (Subtotal): "+$("oSub").textContent].concat($("oDiscRow").style.display!=="none"?["ส่วนลด (Discount): "+$("oDisc").textContent]:[]).concat(["ยอดรวมทั้งสิ้น (Total): "+$("oTotal").textContent,...paymentLines,""]).concat(cnote?["หมายเหตุเพิ่มเติม (Notes):",cnote,""]:[]).concat(accs?["ช่องทางชำระเงิน:",accs,""]:[]).concat(["รายละเอียดในไฟล์ PDF ที่แนบมาพร้อมอีเมลนี้","","ขอบคุณครับ","BESTPARTfilms","โทร. 089-8454931 / 081-8433480","IG/FB: bestpart.films"]).join("\n");
       if (appMode === "corporate") {
     var cname = $("corpClientName").value.trim();
     var docType = $("corpDocType").value;
@@ -1229,7 +1255,7 @@ async function sendDoc(){
     var payload = {
       pdfBase64: b64,
       filename: fname,
-      folder: "ใบเสนอราคาและยืนยันการจอง BESTPARTfilms",
+      folder: "ใบแจ้งหนี้และใบวางบิล BESTPARTfilms",
       sendEmail: (wantEmail && !!to),
       to: to,
       subject: subject,
@@ -1237,25 +1263,58 @@ async function sendDoc(){
     };
     set("", "⏳ กำลังส่งขึ้น Google...");
     await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
-    set("ok", "✅ ส่งเรียบร้อย! เช็คไฟล์ในโฟลเดอร์ BESTPARTfilms บน Google Drive" + ((wantEmail && to) ? " และอีเมลใน Sent" : "") + " (ครั้งแรกกรุณาตรวจว่ามาถึงจริง)");
+    set("ok", "ส่งคำขอแล้ว กรุณาตรวจสอบไฟล์ใน Google Drive" + ((wantEmail && to) ? " และอีเมลใน Sent" : ""));
     return;
   }
 var payload={pdfBase64:b64,filename:fname,folder:"ใบเสนอราคาและยืนยันการจอง BESTPARTfilms",sendEmail:(wantEmail&&!!to),to:to,subject:subject,body:body};
     set("","⏳ กำลังส่งขึ้น Google...");
     await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
-    set("ok","✅ ส่งเรียบร้อย! เช็คไฟล์ในโฟลเดอร์ BESTPARTfilms บน Google Drive"+((wantEmail&&to)?" และอีเมลใน Sent":"")+" (ครั้งแรกกรุณาตรวจว่ามาถึงจริง)");
+    set("ok","ส่งคำขอแล้ว กรุณาตรวจสอบไฟล์ใน Google Drive"+((wantEmail&&to)?" และอีเมลใน Sent":""));
   }catch(err){ set("err","❌ เกิดข้อผิดพลาด: "+err); }
   finally{ btn.disabled=false; }
 }
 function fmtDMY(v){v=(v||"").trim();var m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m){return ("0"+m[3]).slice(-2)+"/"+("0"+m[2]).slice(-2)+"/"+m[1];}var d=v.replace(/\D/g,"");if(/^\d{8}$/.test(d))return d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4);return v;}
+function earliestDate(values){
+  const dates=[];
+  values.forEach(value=>{for(const m of (value||"").matchAll(/\b(?:(\d{4})-(\d{1,2})-(\d{1,2})|(\d{1,2})[\/-](\d{1,2})[\/-](\d{4}))\b/g)){
+    const y=+(m[1]||m[6]),month=+(m[2]||m[5]),day=+(m[3]||m[4]),d=new Date(Date.UTC(y,month-1,day));
+    if(y>=1900&&d.getUTCFullYear()===y&&d.getUTCMonth()===month-1&&d.getUTCDate()===day)dates.push(`${y}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`);
+  }});
+  return dates.sort()[0]||"";
+}
 function fileName(){
   if(appMode==="corporate"){
     const d=fmtDMY($("corpDocDate").value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     const date=d?`${d[3]}-${d[2]}-${d[1]}`:"No-date";
     return [date, $("corpClientName").value.trim(), ($("corpDocNo").value.trim()||"INV")].filter(Boolean).join(" ")||"BESTPARTfilms-Billing";
-  }const d=fmtDMY($("edate").value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/),date=d?`${d[3]}-${d[2]}-${d[1]}`:"No-date";return [date,$("cname").value.trim(),$("cphone").value.trim()].filter(Boolean).join(" ")||"BESTPARTfilms";}
-function snapDate(el){var d=(el.value||"").replace(/\D/g,"").slice(0,8);if(d.length===8)el.value=d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4);}
-function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex1","flex2","perDay1","perDay2","pkgOn2"].forEach(id=>$(id).checked=false);["ao_after_q","ao_sde_q","ao_doc_q"].forEach(id=>{if($(id))$(id).value="1";});if($("customNotes"))$("customNotes").value="";$("pkgOn1").checked=true;[1,2].forEach(n=>{const p=pkg(n);p.days.value="1";p.dayRows.innerHTML="";p.dayRows.style.display="none";});customItems=[];$("customList").innerHTML="";render();}
+  }
+  const packageDates=[1,2].flatMap(n=>{const p=pkg(n);return p.on.checked?[p.tslot.value,...(p.perDay.checked?[...p.dayRows.querySelectorAll(".dayrow")].flatMap(r=>[r.querySelector(".dr-date").value,r.querySelector(".dr-tslot").value]):[])]:[];});
+  const date=earliestDate([$("edate").value,...packageDates])||"No-date";
+  return [date,$("cname").value.trim(),$("cphone").value.trim()].filter(Boolean).join(" ")||"BESTPARTfilms";
+}
+function snapDate(el){const v=(el.value||"").trim();if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(v)){el.value=fmtDMY(v);return;}const d=v.replace(/\D/g,"");if(/^\d{8}$/.test(d))el.value=d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4);}
+function resetForm(){
+  if(appMode==="corporate"){
+    document.querySelectorAll("#ctrlCorp input, #ctrlCorp select, #ctrlCorp textarea").forEach(el=>{
+      if(/^corpIssuer/.test(el.id))return;
+      if(el.type==="checkbox")el.checked=el.defaultChecked;
+      else if(el.tagName==="SELECT")el.selectedIndex=0;
+      else el.value=el.defaultValue;
+    });
+    const d=new Date();$("corpDocDate").value=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+    corpItems=JSON.parse(JSON.stringify(corpDefaultItems));renderCorpItemEditors();renderCorp();return;
+  }
+  ["cname","cphone","cemail","edate","venue","tslot1","tslot2","customNotes"].forEach(id=>$(id).value="");
+  ["disc","ao_after_q","ao_sde_q","ao_doc_q"].forEach(id=>$(id).value=id==="disc"?"0":"1");
+  $("depMode").value="pct";$("depVal").value="50";$("ramt").value="";
+  $("rtype").value="dep";$("rmethod").selectedIndex=0;
+  ["ao_after","ao_sde","ao_doc","ao_love","flex1","flex2","perDay1","perDay2","pkgOn2","acc_scb","acc_ktb"].forEach(id=>$(id).checked=false);
+  ["pkgOn1","acc_kbank","sigToggle","sendEmailChk"].forEach(id=>$(id).checked=true);
+  [1,2].forEach(n=>{const p=pkg(n);p.team.value="2";p.hours.value="5";p.days.value="1";p.dayRows.innerHTML="";p.dayRows.style.display="none";});
+  const d=new Date(),today=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  $("qdate").value=today;$("rdate").value=today;
+  customItems=[];renderCustomRows();render();
+}
 document.querySelectorAll("input,select,textarea").forEach(el=>{el.addEventListener("input",render);el.addEventListener("change",render);});
 ["ao_after_q","ao_sde_q","ao_doc_q"].forEach(id=>{const el=$(id);if(el)el.addEventListener("input",function(){const chk=$(id.replace("_q",""));if(chk&&!chk.checked){chk.checked=true;render();}});});
 [1,2].forEach(n=>{const p=pkg(n);p.perDay.addEventListener("change",()=>buildDayRows(n));p.days.addEventListener("change",()=>buildDayRows(n));p.dayRows.addEventListener("input",render);p.dayRows.addEventListener("change",render);p.dayRows.addEventListener("blur",function(e){if(e.target.classList&&e.target.classList.contains("dr-date")){snapDate(e.target);render();}},true);});
@@ -1269,7 +1328,7 @@ render();
 (function(){
   var RAW="https://raw.githubusercontent.com/bestpartteam-debug/bestpartfilms/main/index.html";
   fetch(RAW+"?_="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():null;}).then(function(t){
-    if(!t)return; var m=t.match(/BUILD="([^"]+)"/); if(!m||m[1]===BUILD)return;
+    if(!t)return; var m=t.match(/BUILD="([^"]+)"/); if(!m||m[1]<=BUILD)return;
     if(document.getElementById("updBanner"))return;
     var b=document.createElement("div"); b.id="updBanner";
     b.style.cssText="position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#1a1a1a;color:#fff;padding:12px 14px;border-radius:11px;font-size:14px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.35)";
@@ -1315,6 +1374,8 @@ let corpItems = [
   }
 ];
 
+const corpDefaultItems=JSON.parse(JSON.stringify(corpItems));
+
 function setCorpCredit(termsText, dueText) {
   $("corpCreditTerms").value = termsText;
   if (dueText) $("corpDueDate").value = dueText;
@@ -1331,11 +1392,11 @@ function renderCorpItemEditors() {
       ${corpItems.length > 1 ? `<button type="button" class="c-btn-del" onclick="removeItemCorp(${idx})" title="ลบรายการ">✕</button>` : ""}
       <div style="margin-bottom:6px;padding-right:20px">
         <label>ชื่องาน / รายการที่ ${idx + 1}</label>
-        <input type="text" value="${(item.title || "").replace(/"/g, '&quot;')}" oninput="updateItemCorp(${idx}, 'title', this.value)">
+        <input type="text" value="${escapeHtml(item.title || "")}" oninput="updateItemCorp(${idx}, 'title', this.value)">
       </div>
       <div style="margin-bottom:6px">
         <label>รายละเอียดเพิ่มเติม (ขึ้นบรรทัดใหม่ได้)</label>
-        <textarea rows="2" oninput="updateItemCorp(${idx}, 'desc', this.value)">${(item.desc || "").replace(/"/g, '&quot;')}</textarea>
+        <textarea rows="2" oninput="updateItemCorp(${idx}, 'desc', this.value)">${escapeHtml(item.desc || "")}</textarea>
       </div>
       <div class="c-row-2">
         <div>
@@ -1394,7 +1455,7 @@ function thaiBahtText(num) {
       if (digit !== 0) {
         if (pos === 1 && digit === 1) result += "สิบ";
         else if (pos === 1 && digit === 2) result += "ยี่สิบ";
-        else if (pos === 0 && digit === 1 && len > 1 && str[len - 2] !== '0') result += "เอ็ด";
+        else if (pos === 0 && digit === 1 && len > 1 && Number(str) > 1) result += "เอ็ด";
         else result += digits[digit] + units[pos];
       }
     }
@@ -1409,7 +1470,7 @@ function thaiBahtText(num) {
     text += convertInteger(intPart.slice(0, -6)) + "ล้าน";
     intPart = intPart.slice(-6);
   }
-  text += convertInteger(intPart) + "บาท";
+  text += (convertInteger(intPart) || "ศูนย์") + "บาท";
   if (decPart === "00") {
     text += "ถ้วน";
   } else {
@@ -1468,12 +1529,12 @@ function renderCorp() {
     tr.innerHTML = `
       <td class="center">${idx + 1}</td>
       <td>
-        <div class="c-item-title">${(item.title || "").replace(/</g, '&lt;')}</div>
-        ${item.desc ? `<div class="c-item-desc">${(item.desc || "").replace(/</g, '&lt;')}</div>` : ""}
+        <div class="c-item-title">${escapeHtml(item.title || "")}</div>
+        ${item.desc ? `<div class="c-item-desc">${escapeHtml(item.desc || "")}</div>` : ""}
       </td>
       <td class="center">${item.qty}</td>
-      <td class="right">${fmt(item.price)}.00</td>
-      <td class="right">${fmt(lineTotal)}.00</td>
+      <td class="right">${fmtMoney(item.price)}</td>
+      <td class="right">${fmtMoney(lineTotal)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1484,26 +1545,26 @@ function renderCorp() {
   const whtAmt = (afterDiscount * whtRate) / 100;
   const netTotal = afterDiscount - whtAmt;
 
-  $("corpViewSubtotal").textContent = fmt(subtotal) + ".00";
+  $("corpViewSubtotal").textContent = fmtMoney(subtotal);
 
   if (discount > 0) {
     $("corpRowDiscount").style.display = "";
-    $("corpViewDiscount").textContent = `-${fmt(discount)}.00`;
+    $("corpViewDiscount").textContent = `-${fmtMoney(discount)}`;
   } else {
     $("corpRowDiscount").style.display = "none";
   }
 
-  $("corpViewAfterDiscount").textContent = fmt(afterDiscount) + ".00";
+  $("corpViewAfterDiscount").textContent = fmtMoney(afterDiscount);
 
   if (whtRate > 0) {
     $("corpRowWht").style.display = "";
     $("corpViewWhtRateLabel").textContent = `${whtRate}%`;
-    $("corpViewWhtAmt").textContent = `-${fmt(whtAmt)}.00`;
+    $("corpViewWhtAmt").textContent = `-${fmtMoney(whtAmt)}`;
   } else {
     $("corpRowWht").style.display = "none";
   }
 
-  $("corpViewNetTotal").textContent = `${fmt(netTotal)}.00 บาท`;
+  $("corpViewNetTotal").textContent = `${fmtMoney(netTotal)} บาท`;
   $("corpViewBahtText").textContent = thaiBahtText(netTotal);
 
   const banks = [];
