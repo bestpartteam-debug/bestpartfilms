@@ -39,8 +39,8 @@ body{display:flex;min-height:100vh}
 .grp{margin-bottom:22px}
 .grp h3{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;font-weight:600}
 label{display:block;font-size:11px;color:var(--ink2);margin:10px 0 5px}
-input,select{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:9px 11px;font-size:13px;font-family:inherit;transition:.15s}
-input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(176,138,60,.12)}
+input,select,textarea{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:9px 11px;font-size:13px;font-family:inherit;transition:.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(176,138,60,.12)}
 .row{display:flex;gap:9px}.row>*{flex:1}
 .chk{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:7px;padding:10px 11px;margin-top:8px;cursor:pointer;transition:.15s;background:#fff}
 .chk:hover{border-color:var(--gold)}
@@ -679,6 +679,12 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
     <div class="hint">Leave amount as 0 to auto-fill the deposit.</div>
   </div>
 
+  <div class="grp"><h3>Notes · หมายเหตุเพิ่มเติม</h3>
+    <label>ระบุยอดแบ่งชำระ / หมายเหตุท้ายเอกสาร</label>
+    <textarea id="customNotes" rows="3" placeholder="เช่น ยอดคงเหลือแบ่งชำระ:&#10;• วันที่ 24/10/2027 ชำระ ฿25,000&#10;• วันที่ 12/12/2027 ชำระ ฿30,000"></textarea>
+    <div class="hint">ข้อความนี้จะแสดงในหัวข้อ Notes / Terms ท้ายเอกสาร</div>
+  </div>
+
     </div><!-- /ctrlWedding -->
 
   <!-- CORPORATE CONTROLS -->
@@ -811,6 +817,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
           <li>Delivered via Google Drive with 1-year backup.</li>
           <li>Deposit confirms the booking and is non-refundable.</li>
           <li>Travel &amp; accommodation outside the city are charged at cost.</li>
+          <li id="oQcustomNoteLi" style="display:none;color:var(--ink);font-weight:500"><b style="color:var(--gold)">Note:</b> <span id="oQcustomNoteText" style="white-space:pre-line"></span></li>
         </ol></div>
         <div class="pay"><div class="cap">Payment</div><div class="acclist" id="oPayQ"></div></div>
       </div>
@@ -851,6 +858,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
           <li>This document confirms the payment stated above.</li>
           <li>The deposit is non-refundable.</li>
           <li>The remaining balance is due within 7 days after the event.</li>
+          <li id="oRcustomNoteLi" style="display:none;color:var(--ink);font-weight:500"><b style="color:var(--gold)">Note:</b> <span id="oRcustomNoteText" style="white-space:pre-line"></span></li>
         </ol></div>
         <div class="pay"><div class="cap">Payment</div><div class="acclist" id="oPayR"></div></div>
       </div>
@@ -1018,7 +1026,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const BUILD="2026-11-16-1925"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
+const BUILD="2026-11-16-1935"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
 const PKG={"2":{5:26000,7:36000,10:52000},"3":{5:32000,7:45000,10:64000}};
 const DELIV={5:"1 Highlight Video (3–5 min) + 1 IG Reel (1 min)",7:"1 Highlight Video (5–7 min) + 1 IG Reel (1 min)",10:"2 Highlight Videos (3–5 min) + 2 IG Reels (1 min)"};
 const DELIV_FLEX="1 Highlight Video (5–7 min) + 1 IG Reel (1 min) · Flexible Option";
@@ -1121,6 +1129,15 @@ function render(){
   $("oRdiscRow").style.display=disc>0?"":"none";$("oRsub").textContent=money(sub);$("oRdisc").textContent="−"+money(disc);
   $("oRpaid").textContent=money(paid);$("oRremain").textContent=money(remain);
   $("oRitems").innerHTML=rows;
+  const cnote = ($("customNotes") ? $("customNotes").value : "").trim();
+  if ($("oRcustomNoteLi")) {
+    $("oRcustomNoteLi").style.display = cnote ? "" : "none";
+    $("oRcustomNoteText").textContent = cnote;
+  }
+  if ($("oQcustomNoteLi")) {
+    $("oQcustomNoteLi").style.display = cnote ? "" : "none";
+    $("oQcustomNoteText").textContent = cnote;
+  }
 }
 function numWords(n){
   n=Math.round(Number(n)||0);if(n===0)return "Zero baht only";
@@ -1184,7 +1201,7 @@ async function sendDoc(){
     var items=getItems().map(function(i){return "- "+i.name.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()+"  x"+i.qty+"  "+money(i.amt);}).join("\n");
     var accs=ACCOUNTS.filter(function(a){return $(a.id).checked;}).map(function(a){return "  "+a.bank+"  "+a.no+"  ("+a.name+")";}).join("\n");
     var subject=typeTh+" - BESTPARTfilms"+(cname?" - "+cname:"");
-    var body=["เรียน "+(cname||"ลูกค้า"),"","BESTPARTfilms ขอส่ง"+typeTh+(ev?" สำหรับงาน "+ev:""),"","รายการ:",items,"","ยอดรวมทั้งสิ้น (Total): "+$("oTotal").textContent,"มัดจำ (Deposit): "+$("oDep").textContent,"คงเหลือ (Balance): "+$("oBal").textContent,""].concat(accs?["ช่องทางชำระเงิน:",accs,""]:[]).concat(["รายละเอียดในไฟล์ PDF ที่แนบมาพร้อมอีเมลนี้","","ขอบคุณครับ","BESTPARTfilms","โทร. 089-8454931 / 081-8433480","IG/FB: bestpart.films"]).join("\n");
+    var body=["เรียน "+(cname||"ลูกค้า"),"","BESTPARTfilms ขอส่ง"+typeTh+(ev?" สำหรับงาน "+ev:""),"","รายการ:",items,"","ยอดรวมทั้งสิ้น (Total): "+$("oTotal").textContent,"มัดจำ (Deposit): "+$("oDep").textContent,"คงเหลือ (Balance): "+$("oBal").textContent,""].concat(cnote?["หมายเหตุเพิ่มเติม (Notes):",cnote,""]:[]).concat(accs?["ช่องทางชำระเงิน:",accs,""]:[]).concat(["รายละเอียดในไฟล์ PDF ที่แนบมาพร้อมอีเมลนี้","","ขอบคุณครับ","BESTPARTfilms","โทร. 089-8454931 / 081-8433480","IG/FB: bestpart.films"]).join("\n");
       if (appMode === "corporate") {
     var cname = $("corpClientName").value.trim();
     var docType = $("corpDocType").value;
@@ -1237,8 +1254,8 @@ function fileName(){
     return [date, $("corpClientName").value.trim(), ($("corpDocNo").value.trim()||"INV")].filter(Boolean).join(" ")||"BESTPARTfilms-Billing";
   }const d=fmtDMY($("edate").value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/),date=d?`${d[3]}-${d[2]}-${d[1]}`:"No-date";return [date,$("cname").value.trim(),$("cphone").value.trim()].filter(Boolean).join(" ")||"BESTPARTfilms";}
 function snapDate(el){var d=(el.value||"").replace(/\D/g,"").slice(0,8);if(d.length===8)el.value=d.slice(0,2)+"/"+d.slice(2,4)+"/"+d.slice(4);}
-function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex1","flex2","perDay1","perDay2","pkgOn2"].forEach(id=>$(id).checked=false);["ao_after_q","ao_sde_q","ao_doc_q"].forEach(id=>{if($(id))$(id).value="1";});$("pkgOn1").checked=true;[1,2].forEach(n=>{const p=pkg(n);p.days.value="1";p.dayRows.innerHTML="";p.dayRows.style.display="none";});customItems=[];$("customList").innerHTML="";render();}
-document.querySelectorAll("input,select").forEach(el=>{el.addEventListener("input",render);el.addEventListener("change",render);});
+function resetForm(){["cname","cphone","edate","venue"].forEach(id=>$(id).value="");$("disc").value=0;$("ramt").value=0;["ao_after","ao_sde","ao_doc","ao_love","flex1","flex2","perDay1","perDay2","pkgOn2"].forEach(id=>$(id).checked=false);["ao_after_q","ao_sde_q","ao_doc_q"].forEach(id=>{if($(id))$(id).value="1";});if($("customNotes"))$("customNotes").value="";$("pkgOn1").checked=true;[1,2].forEach(n=>{const p=pkg(n);p.days.value="1";p.dayRows.innerHTML="";p.dayRows.style.display="none";});customItems=[];$("customList").innerHTML="";render();}
+document.querySelectorAll("input,select,textarea").forEach(el=>{el.addEventListener("input",render);el.addEventListener("change",render);});
 ["ao_after_q","ao_sde_q","ao_doc_q"].forEach(id=>{const el=$(id);if(el)el.addEventListener("input",function(){const chk=$(id.replace("_q",""));if(chk&&!chk.checked){chk.checked=true;render();}});});
 [1,2].forEach(n=>{const p=pkg(n);p.perDay.addEventListener("change",()=>buildDayRows(n));p.days.addEventListener("change",()=>buildDayRows(n));p.dayRows.addEventListener("input",render);p.dayRows.addEventListener("change",render);p.dayRows.addEventListener("blur",function(e){if(e.target.classList&&e.target.classList.contains("dr-date")){snapDate(e.target);render();}},true);});
 $("edate").addEventListener("blur",function(){snapDate(this);render();});
