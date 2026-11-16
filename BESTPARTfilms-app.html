@@ -1026,7 +1026,7 @@ table.items td.r,table.items td.c{white-space:nowrap;padding-left:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const BUILD="2026-11-16-1935"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
+const BUILD="2026-11-16-2055"; // ⚠️ bump ทุกครั้งที่ deploy (ให้มือถือเด้งแบนเนอร์ "มีเวอร์ชันใหม่")
 const PKG={"2":{5:26000,7:36000,10:52000},"3":{5:32000,7:45000,10:64000}};
 const DELIV={5:"1 Highlight Video (3–5 min) + 1 IG Reel (1 min)",7:"1 Highlight Video (5–7 min) + 1 IG Reel (1 min)",10:"2 Highlight Videos (3–5 min) + 2 IG Reels (1 min)"};
 const DELIV_FLEX="1 Highlight Video (5–7 min) + 1 IG Reel (1 min) · Flexible Option";
@@ -1185,7 +1185,7 @@ async function sendDoc(){
   if(!/^https:\/\/script\.google\.com\//.test(url)){ set("err","⚠ ยังไม่ได้ใส่ลิงก์ Apps Script (ดูวิธีในคู่มือ)"); return; }
   if(typeof html2canvas==="undefined"||!window.jspdf){ set("err","⚠ ต้องต่ออินเทอร์เน็ตเพื่อสร้าง PDF"); return; }
   var isQ=!$("docQ").classList.contains("hidden");
-  var doc=isQ?$("docQ"):$("docR");
+  var doc=appMode==="corporate"?$("docC"):(isQ?$("docQ"):$("docR"));
   var btn=$("sendBtn"); btn.disabled=true;
   try{
     set("","⏳ กำลังสร้าง PDF...");
@@ -1198,6 +1198,7 @@ async function sendDoc(){
     var wantEmail=$("sendEmailChk").checked;
     var to=($("cemail").value||"").split(/[,;\s]+/).filter(Boolean).join(",");
     var ev=[fmtDMY($("edate").value),$("venue").value].filter(Boolean).join(" · ");
+    var cnote=($("customNotes")?$("customNotes").value:"").trim();
     var items=getItems().map(function(i){return "- "+i.name.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()+"  x"+i.qty+"  "+money(i.amt);}).join("\n");
     var accs=ACCOUNTS.filter(function(a){return $(a.id).checked;}).map(function(a){return "  "+a.bank+"  "+a.no+"  ("+a.name+")";}).join("\n");
     var subject=typeTh+" - BESTPARTfilms"+(cname?" - "+cname:"");
